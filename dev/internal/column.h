@@ -1,10 +1,3 @@
-//
-//  column_t.h
-//  CPPTest
-//
-//  Created by John Zakharov on 20.01.2018.
-//  Copyright © 2018 John Zakharov. All rights reserved.
-//
 
 #ifndef column_t_h
 #define column_t_h

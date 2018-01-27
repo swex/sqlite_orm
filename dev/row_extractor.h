@@ -1,6 +1,5 @@
 
-#ifndef row_extractor_h
-#define row_extractor_h
+#pragma once
 
 #include <sqlite3.h>
 #include <type_traits>
@@ -240,5 +239,3 @@ namespace sqlite_orm {
         }
     };
 }
-
-#endif /* row_extractor_h */

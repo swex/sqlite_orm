@@ -1,10 +1,3 @@
-//
-//  sqlite_type.h
-//  CPPTest
-//
-//  Created by John Zakharov on 20.01.2018.
-//  Copyright © 2018 John Zakharov. All rights reserved.
-//
 
 #ifndef sqlite_type_h
 #define sqlite_type_h

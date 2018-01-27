@@ -1,6 +1,5 @@
 
-#ifndef dev_sqlite_orm_h
-#define dev_sqlite_orm_h
+#pragma once
 
 #include <string>
 #include <stdexcept>
@@ -628,6 +627,3 @@ __pragma(pop_macro("max"))
 # undef __RESTORE_MAX__
 # endif
 #endif // defined(_MSC_VER)
-
-#endif /* dev_sqlite_orm_h */
-

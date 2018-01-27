@@ -1,10 +1,3 @@
-//
-//  not_found_exception.h
-//  CPPTest
-//
-//  Created by John Zakharov on 21.01.2018.
-//  Copyright © 2018 John Zakharov. All rights reserved.
-//
 
 #ifndef not_found_exception_h
 #define not_found_exception_h

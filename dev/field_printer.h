@@ -1,10 +1,3 @@
-//
-//  field_printer.h
-//  CPPTest
-//
-//  Created by John Zakharov on 20.01.2018.
-//  Copyright © 2018 John Zakharov. All rights reserved.
-//
 
 #ifndef field_printer_h
 #define field_printer_h
