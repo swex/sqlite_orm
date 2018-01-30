@@ -1,31 +1,8 @@
 {
-	"project": "JSON for Modern C++",
+	"project": "SQLite library for modern C++",
 	"target": "include/sqlite_orm/sqlite_orm.h",
 	"sources": [
-		"aggregate_functions/aggregate_functions.h",
-		"conditions/conditions.h",
-		"core_functions/core_functions.h",
-		"field_printer.h",
-		"internal/collate_argument.h",
-		"internal/column_result.h",
-		"internal/column.h",
-		"internal/constraints/constraints.h",
-		"internal/default_value_extractor.h",
-		"internal/index.h",
-		"internal/internal.h",
-		"internal/join_iterator.h",
-		"internal/sqlite_type.h",
-		"internal/storage_impl.h",
-		"internal/storage.h",
-		"internal/table.h",
-		"not_found_exception.h",
-		"row_extractor.h",
-		"sqlite_orm.h",
-		"statement_binder.h",
-		"sync_schema_result.h",
-		"tuple_helper/tuple_helper.h",
-		"type_is_nullable.h",
-		"type_printer.h"
+		"sqlite_orm.h"
 	],
 	"include_paths": ["."]
 }

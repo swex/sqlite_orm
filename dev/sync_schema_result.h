@@ -1,13 +1,4 @@
-//
-//  sync_schema_result.h
-//  CPPTest
-//
-//  Created by John Zakharov on 21.01.2018.
-//  Copyright © 2018 John Zakharov. All rights reserved.
-//
-
-#ifndef sync_schema_result_h
-#define sync_schema_result_h
+#pragma once
 
 #include <ostream>
 
@@ -60,5 +51,3 @@ namespace sqlite_orm {
         }
     }
 }
-
-#endif /* sync_schema_result_h */

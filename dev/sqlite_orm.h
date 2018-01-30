@@ -16,11 +16,11 @@
 #include <ostream>  //  std::ostream
 #include <iterator> //  std::iterator_traits
 
+#include "internal/collate_argument.h"
 #include "conditions/conditions.h"
 #include "internal/constraints/constraints.h"
 #include "tuple_helper/tuple_helper.h"
 #include "type_printer.h"
-#include "internal/collate_argument.h"
 #include "internal/constraints/constraints.h"
 #include "internal/sqlite_type.h"
 #include "type_is_nullable.h"

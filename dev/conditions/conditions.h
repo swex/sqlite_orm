@@ -6,7 +6,7 @@
 #include <tuple>
 #include <memory>
 
-#include "collate_argument.h"
+//#include "collate_argument.h"
 #include "constraints.h"
 
 namespace sqlite_orm {

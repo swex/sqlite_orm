@@ -1,6 +1,4 @@
-
-#ifndef collate_argument_h
-#define collate_argument_h
+#pragma once
 
 namespace sqlite_orm {
     
@@ -14,5 +12,3 @@ namespace sqlite_orm {
     }
     
 }
-
-#endif /* collate_argument_h */

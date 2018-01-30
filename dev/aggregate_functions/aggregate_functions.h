@@ -1,6 +1,5 @@
 
-#ifndef aggregate_functions_h
-#define aggregate_functions_h
+#pragma once
 
 #include <string>
 
@@ -91,5 +90,3 @@ namespace sqlite_orm {
         
     }
 }
-
-#endif /* aggregate_functions_h */

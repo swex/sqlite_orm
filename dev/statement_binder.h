@@ -1,6 +1,4 @@
-
-#ifndef statement_binder_h
-#define statement_binder_h
+#pragma once
 
 #include <type_traits>  //  std::is_integral, std::conditional_t, std::enable_if_t, std::is_same
 #include <sqlite3.h>    //  sqlite3_stmt, sqlite3_bind_*
@@ -170,5 +168,3 @@ namespace sqlite_orm {
         }
     };
 }
-
-#endif /* statement_binder_h */
