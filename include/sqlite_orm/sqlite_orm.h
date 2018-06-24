@@ -2766,6 +2766,7 @@ namespace sqlite_orm {
 #pragma once
 
 #include <string>   //  std::string
+#include <tuple>    //  std::tuple
 
 namespace sqlite_orm {
     
@@ -2863,6 +2864,22 @@ namespace sqlite_orm {
             using field_type = F;
             
             field_type field;
+        };
+        
+        template<class T, class ...Args>
+        struct subselect_t {
+            T column;
+            std::tuple<Args...> conditions;
+        };
+        
+        /**
+         *  `UNION` and `UNION ALL` constraint.
+         */
+        template<class L, class R>
+        struct union_t {
+            bool all = false;
+            L l;
+            R r;
         };
     }
     

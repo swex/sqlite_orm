@@ -1,6 +1,8 @@
 #pragma once
 
 #include <string>   //  std::string
+#include <tuple>    //  std::tuple
+#include <utility>  //  std::forward
 
 namespace sqlite_orm {
     
@@ -99,6 +101,28 @@ namespace sqlite_orm {
             
             field_type field;
         };
+        
+        template<class T, class ...Args>
+        struct single_column_subselect_t {
+            T column;
+            std::tuple<Args...> conditions;
+        };
+        
+        template<class ...Cols, class ...Args>
+        struct multi_column_subselect_t {
+            columns_t<Cols..>> cols;
+            std::tuple<Args...> conditions;
+        };
+        
+        /**
+         *  `UNION` and `UNION ALL` query holder.
+         */
+        template<class L, class R>
+        struct union_t {
+            bool all = false;
+            L l;
+            R r;
+        };
     }
     
     template<class T>
@@ -134,7 +158,24 @@ namespace sqlite_orm {
      */
     template<class T, class F>
     internal::column_pointer<T, F> column(F f) {
-        using ret_t = internal::column_pointer<T, F>;
-        return ret_t{f};
+        return {f};
+    }
+    
+    template<class T, class ...Args>
+    internal::single_column_subselect_t<T, Args...> select(T t, Args ...args) {
+        return {std::move(t), std::forward<Args>(args)...};
+    }
+    
+    template<class ...Cols, class ...Args>
+    internal::multi_column_subselect_t<Cols...
+    
+    template<class L, class R>
+    internal::union_t union_(L l, R r) {
+        return {false, std::move(l), std::move(r)};
+    }
+    
+    template<class L, class R>
+    internal::union_t union_all(L l, R r) {
+        return {true, std::move(l), std::move(r)};
     }
 }
