@@ -148,6 +148,27 @@ namespace sqlite_orm {
         };
         
         /**
+         *  Intersect object type.
+         */
+        template<class L, class R>
+        struct intersect_t {
+            using left_type = L;
+            using right_type = R;
+            
+            left_type left;
+            right_type right;
+            
+            union_t(left_type l, right_type r): left(std::move(l)), right(std::move(r)) {
+                this->left.highest_level = true;
+                this->right.highest_level = true;
+            }
+            
+            operator std::string() const {
+                return "INTERSECT";
+            }
+        };
+        
+        /**
          *  Generic way to get DISTINCT value from any type.
          */
         template<class T>
@@ -232,6 +253,12 @@ namespace sqlite_orm {
     template<class L, class R>
     internal::union_t<L, R> union_all(L lhs, R rhs) {
         return {std::move(lhs), std::move(rhs), true};
+    }
+    
+    
+    template<class L, class R>
+    internal::intersect_t<L, R> intersect(L lhs, R rhs) {
+        return {std::move(lhs), std::move(rhs)};
     }
     
     template<class T>

@@ -286,7 +286,9 @@ int main(int argc, char **argv) {
         //      FROM employees
         //      WHERE department_id = e.department_id);
         using als = alias_e<Employee>;
-        auto rows = storage.select(columns(alias_column<als>(&Employee::lastName), alias_column<als>(&Employee::salary), alias_column<als>(&Employee::departmentId)),
+        auto rows = storage.select(columns(alias_column<als>(&Employee::lastName),
+                                           alias_column<als>(&Employee::salary),
+                                           alias_column<als>(&Employee::departmentId)),
                                    where(greater_than(alias_column<als>(&Employee::salary),
                                                       select(avg(&Employee::salary),
                                                              where(is_equal(&Employee::departmentId, alias_column<als>(&Employee::departmentId)))))));
