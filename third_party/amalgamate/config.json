@@ -2,6 +2,9 @@
 	"project": "SQLite ORM",
 	"target": "include/sqlite_orm/sqlite_orm.h",
 	"sources": [
+		"dev/table_info.h",
+		"dev/query.h",
+		"dev/database.h",
 		"dev/start_macros.h",
 		"dev/error_code.h",
 		"dev/sqlite_type.h",
@@ -24,8 +27,6 @@
 		"dev/select_constraints.h",
 		"dev/database_connection.h",
 		"dev/table_type.h",
-		"dev/table_info.h",
-		"dev/statement_finalizer.h",
 		"dev/arithmetic_tag.h",
 		"dev/is_std_ptr.h",
 		"dev/statement_binder.h",
@@ -39,7 +40,8 @@
 		"dev/table.h",
 		"dev/storage_impl.h",
 		"dev/storage.h",
-		"dev/finish_macros.h"
+		"dev/finish_macros.h",
+		"dev/sqlite_database.h"
 	],
 	"include_paths": ["dev"]
 }

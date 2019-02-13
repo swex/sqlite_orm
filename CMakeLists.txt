@@ -19,3 +19,4 @@ endif()
 
 add_subdirectory(examples)
 
+add_custom_target(dev_headers "${CMAKE_CURRENT_SOURCE_DIR}/dev/*.h")

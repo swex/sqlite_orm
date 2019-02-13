@@ -16,8 +16,8 @@
 
 #include <iostream>
 
-using std::cout;
 using std::cerr;
+using std::cout;
 using std::endl;
 
 /**
@@ -28,59 +28,63 @@ struct KeyValue {
     std::string value;
 };
 
-auto& getStorage() {
+auto& getStorage()
+{
     using namespace sqlite_orm;
     static auto storage = make_storage("key_value_example.sqlite",
-                                       make_table("key_value",
-                                                  make_column("key", &KeyValue::key, primary_key()),
-                                                  make_column("value", &KeyValue::value)));
+        make_table("key_value",
+            make_column("key", &KeyValue::key, primary_key()),
+            make_column("value", &KeyValue::value)));
     return storage;
 }
 
-void setValue(const std::string &key, const std::string &value) {
+void setValue(const std::string& key, const std::string& value)
+{
     using namespace sqlite_orm;
-    KeyValue kv{key, value};
+    KeyValue kv { key, value };
     getStorage().replace(kv);
 }
 
-std::string getValue(const std::string &key) {
+std::string getValue(const std::string& key)
+{
     using namespace sqlite_orm;
-    if(auto kv = getStorage().get_no_throw<KeyValue>(key)){
+    if (auto kv = getStorage().get_no_throw<KeyValue>(key)) {
         return kv->value;
-    }else{
+    } else {
         return {};
     }
 }
 
-int storedKeysCount() {
+int storedKeysCount()
+{
     return getStorage().count<KeyValue>();
 }
 
-int main(int argc, char **argv) {
-    
-    cout << argv[0] << endl;    //  to know executable path in case if you need to access sqlite directly from sqlite client
-    
+int main(int argc, char** argv)
+{
+
+    cout << argv[0] << endl; //  to know executable path in case if you need to access sqlite directly from sqlite client
+
     getStorage().sync_schema(); //  to create table if it doesn't exist
-    
+
     struct {
         std::string userId = "userId";
         std::string userName = "userName";
-        std::string userGender = "userGender";  //  this key will be missing
+        std::string userGender = "userGender"; //  this key will be missing
     } keys; //  to keep keys in one place
-    
+
     setValue(keys.userId, "6");
     setValue(keys.userName, "Peter");
-    
+
     auto userId = getValue(keys.userId);
-    cout << "userId = " << userId << endl;  //  userId = 6
-    
+    cout << "userId = " << userId << endl; //  userId = 6
+
     auto userName = getValue(keys.userName);
-    cout << "userName = " << userName << endl;  //  userName = Peter
-    
+    cout << "userName = " << userName << endl; //  userName = Peter
+
     auto userGender = getValue(keys.userGender);
-    cout << "userGender = " << userGender << endl;  //  userGender =
-    
+    cout << "userGender = " << userGender << endl; //  userGender =
+
     auto kvsCount = storedKeysCount();
-    cout << "kvsCount = " << kvsCount << endl;  //  kvsCount = 2
-    
+    cout << "kvsCount = " << kvsCount << endl; //  kvsCount = 2
 }
