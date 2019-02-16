@@ -460,6 +460,24 @@ public:
     {
         return sqlite3_libversion();
     }
+
+    static int collate_callback(void* arg, int leftLen, const void* lhs, int rightLen, const void* rhs)
+    {
+        auto& f = *(collating_function*)arg;
+        return f(leftLen, lhs, rightLen, rhs);
+    }
+
+    void add_collation(std::string name, collating_function* function_ptr) override
+    {
+        if (sqlite3_create_collation(db,
+                name.c_str(),
+                SQLITE_UTF8,
+                function_ptr,
+                function_ptr ? collate_callback : nullptr)
+            != SQLITE_OK) {
+            throw std::system_error(std::error_code(last_error_code(), error_category()));
+        }
+    }
 };
 
 const char* sqlite3_database::SQLITE_TABLE_NAMES_QUERY = "SELECT name FROM sqlite_master WHERE type='table'";

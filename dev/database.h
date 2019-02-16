@@ -3,6 +3,7 @@
 #include "query.h"
 #include "table_info.h"
 #include <algorithm> // std::find
+#include <functional>
 #include <map>
 #include <memory>
 #include <string> //  std::string
@@ -72,6 +73,9 @@ public:
     virtual std::string current_timestamp() = 0;
     virtual bool threadsafe() = 0;
     virtual query_ptr make_query(const std::string& statement) = 0;
+    using collating_function = std::function<int(int, const void*, int, const void*)>;
+
+    virtual void add_collation(std::string name, collating_function* f) = 0;
     /*
      * bind methods
      */
@@ -106,6 +110,20 @@ public:
     {
         query->bindNull(this, index);
     }
+    enum class limit_type {
+        length,
+        sql_length,
+        columns,
+        expr_depth,
+        compound_select,
+        vdbe_op,
+        function_arg,
+        attached,
+        like_pattern_length,
+        trigger_depth,
+        variable_number,
+        worker_threads,
+    };
     // limits
     virtual int limit_length() = 0;
     virtual void limit_set_length(int value) = 0;

@@ -1339,20 +1339,50 @@ namespace internal {
                 this->pragma.set_pragma("journal_mode", static_cast<journal_mode>(this->pragma._journal_mode), db);
             }
 
-            //            for (auto& p : this->collatingFunctions) {
-            //                if (sqlite3_create_collation(db,
-            //                        p.first.c_str(),
-            //                        SQLITE_UTF8,
-            //                        &p.second,
-            //                        collate_callback)
-            //                    != SQLITE_OK) {
-            //                    throw std::system_error(std::error_code(db->last_error_code(), db->error_category()));
-            //                }
-            //            }
+            for (auto& p : this->collatingFunctions) {
+                db->add_collation(p.first, &p.second);
+            }
 
-            //            for (auto& p : this->limit.limits) {
-            //                sqlite3_limit(db, p.first, p.second);
-            //            }
+            for (auto& p : this->limit.limits) {
+                switch (p.first) {
+                case database::limit_type::length:
+                    db->limit_set_length(p.second);
+                    break;
+                case database::limit_type::sql_length:
+                    db->limit_set_sql_length(p.second);
+                    break;
+                case database::limit_type::columns:
+                    db->limit_set_columns(p.second);
+                    break;
+                case database::limit_type::expr_depth:
+                    db->limit_set_expr_depth(p.second);
+                    break;
+                case database::limit_type::compound_select:
+                    db->limit_set_compound_select(p.second);
+                    break;
+                case database::limit_type::vdbe_op:
+                    db->limit_set_vdbe_op(p.second);
+                    break;
+                case database::limit_type::function_arg:
+                    db->limit_set_function_arg(p.second);
+                    break;
+                case database::limit_type::attached:
+                    db->limit_set_attached(p.second);
+                    break;
+                case database::limit_type::like_pattern_length:
+                    db->limit_set_like_pattern_length(p.second);
+                    break;
+                case database::limit_type::trigger_depth:
+                    db->limit_set_trigger_depth(p.second);
+                    break;
+                case database::limit_type::variable_number:
+                    db->limit_set_variable_number(p.second);
+                    break;
+                case database::limit_type::worker_threads:
+                    db->limit_set_worker_threads(p.second);
+                    break;
+                }
+            }
 
             if (this->on_open) {
                 this->on_open(db);
@@ -1367,11 +1397,6 @@ namespace internal {
                 res += impl->foreign_keys_count();
             });
             return res;
-        }
-        static int collate_callback(void* arg, int leftLen, const void* lhs, int rightLen, const void* rhs)
-        {
-            auto& f = *(collating_function*)arg;
-            return f(leftLen, lhs, rightLen, rhs);
         }
 
     public:
@@ -1394,17 +1419,10 @@ namespace internal {
             }
 
             //  create collations if db is open
-            //            if (this->currentTransaction) {
-            //                auto db = this->currentTransaction->get_db();
-            //                if (sqlite3_create_collation(db,
-            //                        name.c_str(),
-            //                        SQLITE_UTF8,
-            //                        functionPointer,
-            //                        f ? collate_callback : nullptr)
-            //                    != SQLITE_OK) {
-            //                    throw std::system_error(std::error_code(db->last_error_code(), db->error_category()));
-            //                }
-            //            }
+            if (this->currentTransaction) {
+                auto db = this->currentTransaction->get_db();
+                db->add_collation(name, functionPointer);
+            }
         }
 
         template <class O, class... Args>
@@ -2219,7 +2237,7 @@ namespace internal {
                 }
                 auto rc = query->next(db);
 
-                if (rc == query::step::done) {
+                if (rc == query::step::done || rc == query::step::row) {
                     res = row_extractor<int>().extract(query.get(), 0);
                 } else {
                     throw std::system_error(std::error_code(db->last_error_code(), db->error_category()));
@@ -2328,7 +2346,7 @@ namespace internal {
                     throw std::system_error(std::error_code(db->last_error_code(), db->error_category()));
                 }
                 auto rc = query->next(db);
-                if (rc == query::step::done) {
+                if (rc == query::step::done || rc == query::step::row) {
                     res = std::make_shared<Ret>(row_extractor<Ret>().extract(query.get(), 0));
                 } else {
                     throw std::system_error(std::error_code(db->last_error_code(), db->error_category()));
@@ -2365,7 +2383,7 @@ namespace internal {
                     throw std::system_error(std::error_code(db->last_error_code(), db->error_category()));
                 }
                 auto rc = query->next(db);
-                if (rc == query::step::done) {
+                if (rc == query::step::done || rc == query::step::row) {
                     res = std::make_shared<Ret>(row_extractor<Ret>().extract(query.get(), 0));
                 } else {
                     throw std::system_error(std::error_code(db->last_error_code(), db->error_category()));
@@ -2402,7 +2420,7 @@ namespace internal {
                     throw std::system_error(std::error_code(db->last_error_code(), db->error_category()));
                 }
                 auto rc = query->next(db);
-                if (rc == query::step::done) {
+                if (rc == query::step::done || rc == query::step::row) {
                     res = std::make_shared<Ret>(row_extractor<Ret>().extract(query.get(), 0));
                 } else {
                     throw std::system_error(std::error_code(db->last_error_code(), db->error_category()));
@@ -2450,7 +2468,7 @@ namespace internal {
                     throw std::system_error(std::error_code(db->last_error_code(), db->error_category()));
                 }
                 auto rc = query->next(db);
-                if (rc == query::step::done) {
+                if (rc == query::step::done || rc == query::step::row) {
                     res = *std::make_shared<double>(row_extractor<double>().extract(query.get(), 0));
                 } else {
                     throw std::system_error(std::error_code(db->last_error_code(), db->error_category()));

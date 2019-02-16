@@ -112,8 +112,10 @@ protected:
 
     void set_pragma(const std::string& name, const sqlite_orm::journal_mode& value, database* db = nullptr)
     {
+        std::shared_ptr<internal::database_connection> connection;
+
         if (!db) {
-            auto connection = this->storage.get_or_create_connection();
+            connection = this->storage.get_or_create_connection();
             db = connection->get_db();
         }
         std::stringstream ss;

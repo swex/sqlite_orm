@@ -76,6 +76,7 @@ public:
 // #include "table_info.h"
 
 #include <algorithm> // std::find
+#include <functional>
 #include <map>
 #include <memory>
 #include <string> //  std::string
@@ -145,6 +146,9 @@ public:
     virtual std::string current_timestamp() = 0;
     virtual bool threadsafe() = 0;
     virtual query_ptr make_query(const std::string& statement) = 0;
+    using collating_function = std::function<int(int, const void*, int, const void*)>;
+
+    virtual void add_collation(std::string name, collating_function* f) = 0;
     /*
      * bind methods
      */
@@ -179,6 +183,20 @@ public:
     {
         query->bindNull(this, index);
     }
+    enum class limit_type {
+        length,
+        sql_length,
+        columns,
+        expr_depth,
+        compound_select,
+        vdbe_op,
+        function_arg,
+        attached,
+        like_pattern_length,
+        trigger_depth,
+        variable_number,
+        worker_threads,
+    };
     // limits
     virtual int limit_length() = 0;
     virtual void limit_set_length(int value) = 0;
@@ -227,28 +245,27 @@ __pragma(push_macro("min"))
 #endif // defined(_MSC_VER)
 
 #include <ciso646> //  due to #166
-
 #pragma once
 
 #include <stdexcept>
 #include <string> //  std::string
 #include <system_error> // std::error_code, std::system_error
 
-        namespace sqlite_orm
-{
+namespace sqlite_orm {
 
-    enum class orm_error_code {
-        not_found = 1,
-        type_is_not_mapped_to_storage,
-        trying_to_dereference_null_iterator,
-        too_many_tables_specified,
-        incorrect_set_fields_specified,
-        column_not_found,
-        table_has_no_primary_key_column,
-        cannot_start_a_transaction_within_a_transaction,
-        no_active_transaction,
-        incorrect_journal_mode_string,
-    };
+enum class orm_error_code {
+    not_found = 1,
+    type_is_not_mapped_to_storage,
+    trying_to_dereference_null_iterator,
+    too_many_tables_specified,
+    incorrect_set_fields_specified,
+    column_not_found,
+    table_has_no_primary_key_column,
+    cannot_start_a_transaction_within_a_transaction,
+    no_active_transaction,
+    incorrect_journal_mode_string,
+};
+
 }
 
 namespace sqlite_orm {
@@ -1164,6 +1181,7 @@ struct type_is_nullable<std::unique_ptr<T>> : public std::true_type {
 
 // #include "constraints.h"
 
+
 namespace sqlite_orm {
 
 namespace internal {
@@ -1436,13 +1454,14 @@ internal::assign_t<L, R> assign(L l, R r)
 #include <tuple> //  std::tuple
 #include <type_traits> //  std::true_type, std::false_type, std::is_same, std::enable_if
 
-// #include "type_is_nullable.h"
-
-// #include "tuple_helper.h"
+// #include "constraints.h"
 
 // #include "default_value_extractor.h"
 
-// #include "constraints.h"
+// #include "tuple_helper.h"
+
+// #include "type_is_nullable.h"
+
 
 namespace sqlite_orm {
 
@@ -1874,6 +1893,7 @@ struct field_printer<std::unique_ptr<T>> {
 // #include "collate_argument.h"
 
 // #include "constraints.h"
+
 
 namespace sqlite_orm {
 
@@ -3283,6 +3303,7 @@ using alias_z = internal::table_alias<T, 'z'>;
 
 // #include "conditions.h"
 
+
 namespace sqlite_orm {
 
 namespace internal {
@@ -3414,6 +3435,7 @@ namespace internal {
 // #include "conditions.h"
 
 // #include "operators.h"
+
 
 namespace sqlite_orm {
 
@@ -4554,9 +4576,10 @@ namespace internal {
 
 #include <type_traits> //  std::enable_if, std::is_member_pointer
 
+// #include "column.h"
+
 // #include "select_constraints.h"
 
-// #include "column.h"
 
 namespace sqlite_orm {
 
@@ -4661,6 +4684,7 @@ struct is_std_ptr<std::unique_ptr<T>> : std::true_type {
 // #include "database.h"
 
 // #include "is_std_ptr.h"
+
 
 namespace sqlite_orm {
 
@@ -4821,6 +4845,7 @@ struct statement_binder<
 
 // #include "journal_mode.h"
 
+
 #include <algorithm> //  std::transform
 #include <array> //  std::array
 #include <locale> // std::toupper
@@ -4883,6 +4908,7 @@ namespace internal {
 }
 
 // #include "query.h"
+
 
 namespace sqlite_orm {
 
@@ -5276,6 +5302,7 @@ internal::index_t<Cols...> make_unique_index(const std::string& name, Cols... co
 
 // #include "alias.h"
 
+
 namespace sqlite_orm {
 
 namespace internal {
@@ -5520,6 +5547,7 @@ namespace internal {
     }
 }
 }
+
 
 namespace sqlite_orm {
 
@@ -5826,9 +5854,10 @@ namespace internal {
 
 // #include "column.h"
 
+// #include "constraints.h"
+
 // #include "tuple_helper.h"
 
-// #include "constraints.h"
 
 namespace sqlite_orm {
 
@@ -5997,23 +6026,24 @@ namespace internal {
 #include <type_traits> //  std::remove_reference, std::is_same, std::is_base_of
 #include <vector> //  std::vector
 
-// #include "table_impl.h"
+// #include "column.h"
 
 // #include "column_result.h"
 
-// #include "static_magic.h"
-
-// #include "typed_comparator.h"
-
 // #include "constraints.h"
 
-// #include "tuple_helper.h"
+// #include "static_magic.h"
+
+// #include "table_impl.h"
 
 // #include "table_info.h"
 
+// #include "tuple_helper.h"
+
 // #include "type_printer.h"
 
-// #include "column.h"
+// #include "typed_comparator.h"
+
 
 namespace sqlite_orm {
 
@@ -6335,9 +6365,11 @@ internal::table_t<T, Cs...> make_table(const std::string& name, Cs&&... args)
 
 // #include "field_value_holder.h"
 
+
 #include <type_traits> //  std::enable_if
 
 // #include "column.h"
+
 
 namespace sqlite_orm {
 namespace internal {
@@ -6372,6 +6404,7 @@ namespace internal {
 // #include "sync_schema_result.h"
 
 // #include "table_info.h"
+
 
 namespace sqlite_orm {
 
@@ -6858,6 +6891,7 @@ namespace internal {
 
 // #include "limit_accesor.h"
 
+
 // #include "database.h"
 
 #include <map> //  std::map
@@ -6876,122 +6910,158 @@ namespace internal {
 
         int length()
         {
-            return get_db()->limit_length();
+            auto connection = get_connection();
+            return connection->get_db()->limit_length();
         }
 
         void length(int newValue)
         {
-            get_db()->limit_set_length(newValue);
+            auto connection = get_connection();
+            connection->get_db()->limit_set_length(newValue);
+            limits[database::limit_type::length] = newValue;
         }
 
         int sql_length()
         {
-            return get_db()->limit_sql_length();
+            auto connection = get_connection();
+            return connection->get_db()->limit_sql_length();
         }
 
         void sql_length(int newValue)
         {
-            get_db()->limit_set_sql_length(newValue);
+            auto connection = get_connection();
+            connection->get_db()->limit_set_sql_length(newValue);
+            limits[database::limit_type::sql_length] = newValue;
         }
 
         int column()
         {
-            return get_db()->limit_columns();
+            auto connection = get_connection();
+            return connection->get_db()->limit_columns();
         }
 
         void column(int newValue)
         {
-            get_db()->limit_set_columns(newValue);
+            auto connection = get_connection();
+            connection->get_db()->limit_set_columns(newValue);
+            limits[database::limit_type::columns] = newValue;
         }
 
         int expr_depth()
         {
-            return get_db()->limit_expr_depth();
+            auto connection = get_connection();
+            return connection->get_db()->limit_expr_depth();
         }
 
         void expr_depth(int newValue)
         {
-            get_db()->limit_set_expr_depth(newValue);
+            auto connection = get_connection();
+            connection->get_db()->limit_set_expr_depth(newValue);
+            limits[database::limit_type::expr_depth] = newValue;
         }
 
         int compound_select()
         {
-            return get_db()->limit_compound_select();
+            auto connection = get_connection();
+            return connection->get_db()->limit_compound_select();
         }
 
         void compound_select(int newValue)
         {
-            get_db()->limit_set_compound_select(newValue);
+            auto connection = get_connection();
+            connection->get_db()->limit_set_compound_select(newValue);
+            limits[database::limit_type::compound_select] = newValue;
         }
 
         int vdbe_op()
         {
-            return get_db()->limit_vdbe_op();
+            auto connection = get_connection();
+            return connection->get_db()->limit_vdbe_op();
         }
 
         void vdbe_op(int newValue)
         {
-            get_db()->limit_set_vdbe_op(newValue);
+            auto connection = get_connection();
+            connection->get_db()->limit_set_vdbe_op(newValue);
+            limits[database::limit_type::vdbe_op] = newValue;
         }
 
         int function_arg()
         {
-            return get_db()->limit_function_arg();
+            auto connection = get_connection();
+            return connection->get_db()->limit_function_arg();
         }
 
         void function_arg(int newValue)
         {
-            get_db()->limit_set_function_arg(newValue);
+            auto connection = get_connection();
+            connection->get_db()->limit_set_function_arg(newValue);
+            limits[database::limit_type::function_arg] = newValue;
         }
 
         int attached()
         {
-            return get_db()->limit_attached();
+            auto connection = get_connection();
+            return connection->get_db()->limit_attached();
         }
 
         void attached(int newValue)
         {
-            get_db()->limit_set_attached(newValue);
+            auto connection = get_connection();
+            connection->get_db()->limit_set_attached(newValue);
+            limits[database::limit_type::attached] = newValue;
         }
 
         int like_pattern_length()
         {
-            return get_db()->limit_like_pattern_length();
+            auto connection = get_connection();
+            return connection->get_db()->limit_like_pattern_length();
         }
 
         void like_pattern_length(int newValue)
         {
-            get_db()->limit_set_like_pattern_length(newValue);
+            auto connection = get_connection();
+            connection->get_db()->limit_set_like_pattern_length(newValue);
+            limits[database::limit_type::like_pattern_length] = newValue;
         }
 
         int variable_number()
         {
-            return get_db()->limit_variable_number();
+            auto connection = get_connection();
+            return connection->get_db()->limit_variable_number();
         }
 
         void variable_number(int newValue)
         {
-            get_db()->limit_set_variable_number(newValue);
+            auto connection = get_connection();
+            connection->get_db()->limit_set_variable_number(newValue);
+            limits[database::limit_type::variable_number] = newValue;
         }
 
         int trigger_depth()
         {
-            return get_db()->limit_trigger_depth();
+            auto connection = get_connection();
+            return connection->get_db()->limit_trigger_depth();
         }
 
         void trigger_depth(int newValue)
         {
-            get_db()->limit_set_trigger_depth(newValue);
+            auto connection = get_connection();
+            connection->get_db()->limit_set_trigger_depth(newValue);
+            limits[database::limit_type::trigger_depth] = newValue;
         }
 
         int worker_threads()
         {
-            return get_db()->limit_worker_threads();
+            auto connection = get_connection();
+            return connection->get_db()->limit_worker_threads();
         }
 
         void worker_threads(int newValue)
         {
-            get_db()->limit_set_worker_threads(newValue);
+            auto connection = get_connection();
+            connection->get_db()->limit_set_worker_threads(newValue);
+            limits[database::limit_type::worker_threads] = newValue;
         }
 
     protected:
@@ -7003,12 +7073,12 @@ namespace internal {
         /**
              *  Stores limit set between connections.
              */
-        //        std::map<int, int> limits;
+        std::map<database::limit_type, int> limits;
 
-        database* get_db()
+        std::shared_ptr<internal::database_connection> get_connection()
         {
             auto connection = this->storage.get_or_create_connection();
-            return connection->get_db();
+            return connection;
         }
     };
 }
@@ -7020,6 +7090,7 @@ namespace internal {
 
 // #include "pragma.h"
 
+
 #include <string> //  std::string
 
 // #include "error_code.h"
@@ -7029,6 +7100,7 @@ namespace internal {
 // #include "query.h"
 
 // #include "row_extractor.h"
+
 
 namespace sqlite_orm {
 
@@ -7135,8 +7207,10 @@ protected:
 
     void set_pragma(const std::string& name, const sqlite_orm::journal_mode& value, database* db = nullptr)
     {
+        std::shared_ptr<internal::database_connection> connection;
+
         if (!db) {
-            auto connection = this->storage.get_or_create_connection();
+            connection = this->storage.get_or_create_connection();
             db = connection->get_db();
         }
         std::stringstream ss;
@@ -7167,6 +7241,7 @@ protected:
 // #include "table_type.h"
 
 // #include "transaction_guard.h"
+
 
 namespace sqlite_orm {
 
@@ -7239,6 +7314,7 @@ namespace internal {
 // #include "type_is_nullable.h"
 
 // #include "type_printer.h"
+
 
 namespace sqlite_orm {
 
@@ -8535,20 +8611,50 @@ namespace internal {
                 this->pragma.set_pragma("journal_mode", static_cast<journal_mode>(this->pragma._journal_mode), db);
             }
 
-            //            for (auto& p : this->collatingFunctions) {
-            //                if (sqlite3_create_collation(db,
-            //                        p.first.c_str(),
-            //                        SQLITE_UTF8,
-            //                        &p.second,
-            //                        collate_callback)
-            //                    != SQLITE_OK) {
-            //                    throw std::system_error(std::error_code(db->last_error_code(), db->error_category()));
-            //                }
-            //            }
+            for (auto& p : this->collatingFunctions) {
+                db->add_collation(p.first, &p.second);
+            }
 
-            //            for (auto& p : this->limit.limits) {
-            //                sqlite3_limit(db, p.first, p.second);
-            //            }
+            for (auto& p : this->limit.limits) {
+                switch (p.first) {
+                case database::limit_type::length:
+                    db->limit_set_length(p.second);
+                    break;
+                case database::limit_type::sql_length:
+                    db->limit_set_sql_length(p.second);
+                    break;
+                case database::limit_type::columns:
+                    db->limit_set_columns(p.second);
+                    break;
+                case database::limit_type::expr_depth:
+                    db->limit_set_expr_depth(p.second);
+                    break;
+                case database::limit_type::compound_select:
+                    db->limit_set_compound_select(p.second);
+                    break;
+                case database::limit_type::vdbe_op:
+                    db->limit_set_vdbe_op(p.second);
+                    break;
+                case database::limit_type::function_arg:
+                    db->limit_set_function_arg(p.second);
+                    break;
+                case database::limit_type::attached:
+                    db->limit_set_attached(p.second);
+                    break;
+                case database::limit_type::like_pattern_length:
+                    db->limit_set_like_pattern_length(p.second);
+                    break;
+                case database::limit_type::trigger_depth:
+                    db->limit_set_trigger_depth(p.second);
+                    break;
+                case database::limit_type::variable_number:
+                    db->limit_set_variable_number(p.second);
+                    break;
+                case database::limit_type::worker_threads:
+                    db->limit_set_worker_threads(p.second);
+                    break;
+                }
+            }
 
             if (this->on_open) {
                 this->on_open(db);
@@ -8563,11 +8669,6 @@ namespace internal {
                 res += impl->foreign_keys_count();
             });
             return res;
-        }
-        static int collate_callback(void* arg, int leftLen, const void* lhs, int rightLen, const void* rhs)
-        {
-            auto& f = *(collating_function*)arg;
-            return f(leftLen, lhs, rightLen, rhs);
         }
 
     public:
@@ -8590,17 +8691,10 @@ namespace internal {
             }
 
             //  create collations if db is open
-            //            if (this->currentTransaction) {
-            //                auto db = this->currentTransaction->get_db();
-            //                if (sqlite3_create_collation(db,
-            //                        name.c_str(),
-            //                        SQLITE_UTF8,
-            //                        functionPointer,
-            //                        f ? collate_callback : nullptr)
-            //                    != SQLITE_OK) {
-            //                    throw std::system_error(std::error_code(db->last_error_code(), db->error_category()));
-            //                }
-            //            }
+            if (this->currentTransaction) {
+                auto db = this->currentTransaction->get_db();
+                db->add_collation(name, functionPointer);
+            }
         }
 
         template <class O, class... Args>
@@ -9415,7 +9509,7 @@ namespace internal {
                 }
                 auto rc = query->next(db);
 
-                if (rc == query::step::done) {
+                if (rc == query::step::done || rc == query::step::row) {
                     res = row_extractor<int>().extract(query.get(), 0);
                 } else {
                     throw std::system_error(std::error_code(db->last_error_code(), db->error_category()));
@@ -9524,7 +9618,7 @@ namespace internal {
                     throw std::system_error(std::error_code(db->last_error_code(), db->error_category()));
                 }
                 auto rc = query->next(db);
-                if (rc == query::step::done) {
+                if (rc == query::step::done || rc == query::step::row) {
                     res = std::make_shared<Ret>(row_extractor<Ret>().extract(query.get(), 0));
                 } else {
                     throw std::system_error(std::error_code(db->last_error_code(), db->error_category()));
@@ -9561,7 +9655,7 @@ namespace internal {
                     throw std::system_error(std::error_code(db->last_error_code(), db->error_category()));
                 }
                 auto rc = query->next(db);
-                if (rc == query::step::done) {
+                if (rc == query::step::done || rc == query::step::row) {
                     res = std::make_shared<Ret>(row_extractor<Ret>().extract(query.get(), 0));
                 } else {
                     throw std::system_error(std::error_code(db->last_error_code(), db->error_category()));
@@ -9598,7 +9692,7 @@ namespace internal {
                     throw std::system_error(std::error_code(db->last_error_code(), db->error_category()));
                 }
                 auto rc = query->next(db);
-                if (rc == query::step::done) {
+                if (rc == query::step::done || rc == query::step::row) {
                     res = std::make_shared<Ret>(row_extractor<Ret>().extract(query.get(), 0));
                 } else {
                     throw std::system_error(std::error_code(db->last_error_code(), db->error_category()));
@@ -9646,7 +9740,7 @@ namespace internal {
                     throw std::system_error(std::error_code(db->last_error_code(), db->error_category()));
                 }
                 auto rc = query->next(db);
-                if (rc == query::step::done) {
+                if (rc == query::step::done || rc == query::step::row) {
                     res = *std::make_shared<double>(row_extractor<double>().extract(query.get(), 0));
                 } else {
                     throw std::system_error(std::error_code(db->last_error_code(), db->error_category()));
@@ -10503,465 +10597,482 @@ __pragma(pop_macro("min"))
 #include <memory>
 #include <sqlite3.h>
 
-        namespace sqlite_orm
+namespace sqlite_orm {
+
+class sqlite_error_category : public std::error_category {
+public:
+    const char* name() const noexcept override final
+    {
+        return "SQLite error";
+    }
+
+    std::string message(int c) const override final
+    {
+        return sqlite3_errstr(c);
+    }
+};
+
+using sqlite_shared_statement = std::shared_ptr<sqlite3_stmt>;
+static sqlite_shared_statement make_sqlite_shared_statement(sqlite3_stmt* ptr = nullptr)
 {
+    return std::shared_ptr<sqlite3_stmt>(ptr, sqlite3_finalize);
+}
 
-    class sqlite_error_category : public std::error_category {
-    public:
-        const char* name() const noexcept override final
-        {
-            return "SQLite error";
-        }
+static void throw_if_not_sqlite_ok(database* db, int result)
+{
+    if (result != SQLITE_OK) {
+        throw std::system_error(std::error_code(db->last_error_code(), db->error_category()));
+    }
+}
+class sqlite3_query : public query {
 
-        std::string message(int c) const override final
-        {
-            return sqlite3_errstr(c);
-        }
-    };
-
-    using sqlite_shared_statement = std::shared_ptr<sqlite3_stmt>;
-    static sqlite_shared_statement make_sqlite_shared_statement(sqlite3_stmt* ptr = nullptr)
+    sqlite3_stmt* stmt = nullptr;
+    // query interface
+public:
+    sqlite3_query(const std::string& statement)
+        : query(statement)
     {
-        return std::shared_ptr<sqlite3_stmt>(ptr, sqlite3_finalize);
+    }
+    ~sqlite3_query()
+    {
+        sqlite3_finalize(stmt);
+    };
+    std::vector<char> columnBlob(int index) override
+    {
+        std::vector<char> result;
+        auto bytes = static_cast<const char*>(sqlite3_column_blob(stmt, index));
+        auto len = sqlite3_column_bytes(stmt, index);
+        result.reserve(len);
+        result.assign(bytes, bytes + len);
+        return result;
+    }
+    bool isColumnValid(int index) override
+    {
+        auto type = sqlite3_column_type(stmt, index);
+        return type != SQLITE_NULL;
     }
 
-    static void throw_if_not_sqlite_ok(database * db, int result)
+    double columnDouble(int index) override
     {
-        if (result != SQLITE_OK) {
-            throw std::system_error(std::error_code(db->last_error_code(), db->error_category()));
-        }
+        return sqlite3_column_double(stmt, index);
     }
-    class sqlite3_query : public query {
 
-        sqlite3_stmt* stmt = nullptr;
-        // query interface
-    public:
-        sqlite3_query(const std::string& statement)
-            : query(statement)
-        {
+    int columnInt(int index) override
+    {
+        return sqlite3_column_int(stmt, index);
+    }
+    int64_t columnBigInt(int index) override
+    {
+        return sqlite3_column_int64(stmt, index);
+    }
+    std::string columnString(int index) override
+    {
+        auto result = reinterpret_cast<const char*>(sqlite3_column_text(stmt, index));
+        if (result) {
+            return { result };
         }
-        ~sqlite3_query()
-        {
-            sqlite3_finalize(stmt);
-        };
-        std::vector<char> columnBlob(int index) override
-        {
-            std::vector<char> result;
-            auto bytes = static_cast<const char*>(sqlite3_column_blob(stmt, index));
-            auto len = sqlite3_column_bytes(stmt, index);
-            result.reserve(len);
-            result.assign(bytes, bytes + len);
-            return result;
-        }
-        bool isColumnValid(int index) override
-        {
-            auto type = sqlite3_column_type(stmt, index);
-            return type != SQLITE_NULL;
-        }
+        return {};
+    }
+    void bindString(database* db, int index, const char* data, int len) override
+    {
+        throw_if_not_sqlite_ok(db, sqlite3_bind_text(stmt, index + 1, data, static_cast<int>(len), SQLITE_TRANSIENT));
+    }
+    void bindBlob(database* db, int index, const void* data, size_t len) override
+    {
+        throw_if_not_sqlite_ok(db, sqlite3_bind_blob(stmt, index + 1, data, static_cast<int>(len), SQLITE_TRANSIENT));
+    }
+    void bindDouble(database* db, int index, double data) override
+    {
+        throw_if_not_sqlite_ok(db, sqlite3_bind_double(stmt, index + 1, data));
+    }
+    void bindInt(database* db, int index, int data) override
+    {
+        throw_if_not_sqlite_ok(db, sqlite3_bind_int(stmt, index + 1, data));
+    }
+    void bindBigInt(database* db, int index, int64_t data) override
+    {
+        throw_if_not_sqlite_ok(db, sqlite3_bind_int64(stmt, index + 1, data));
+    }
+    void bindNull(database* db, int index) override
+    {
+        throw_if_not_sqlite_ok(db, sqlite3_bind_null(stmt, index + 1));
+    }
 
-        double columnDouble(int index) override
-        {
-            return sqlite3_column_double(stmt, index);
-        }
-
-        int columnInt(int index) override
-        {
-            return sqlite3_column_int(stmt, index);
-        }
-        int64_t columnBigInt(int index) override
-        {
-            return sqlite3_column_int64(stmt, index);
-        }
-        std::string columnString(int index) override
-        {
-            auto result = reinterpret_cast<const char*>(sqlite3_column_text(stmt, index));
-            if (result) {
-                return { result };
-            }
-            return {};
-        }
-        void bindString(database* db, int index, const char* data, int len) override
-        {
-            throw_if_not_sqlite_ok(db, sqlite3_bind_text(stmt, index + 1, data, static_cast<int>(len), SQLITE_TRANSIENT));
-        }
-        void bindBlob(database* db, int index, const void* data, size_t len) override
-        {
-            throw_if_not_sqlite_ok(db, sqlite3_bind_blob(stmt, index + 1, data, static_cast<int>(len), SQLITE_TRANSIENT));
-        }
-        void bindDouble(database* db, int index, double data) override
-        {
-            throw_if_not_sqlite_ok(db, sqlite3_bind_double(stmt, index + 1, data));
-        }
-        void bindInt(database* db, int index, int data) override
-        {
-            throw_if_not_sqlite_ok(db, sqlite3_bind_int(stmt, index + 1, data));
-        }
-        void bindBigInt(database* db, int index, int64_t data) override
-        {
-            throw_if_not_sqlite_ok(db, sqlite3_bind_int64(stmt, index + 1, data));
-        }
-        void bindNull(database* db, int index) override
-        {
-            throw_if_not_sqlite_ok(db, sqlite3_bind_null(stmt, index + 1));
-        }
-
-        bool prepare(database* db) override
-        {
-            return db->prepare(this);
-        }
-        step next(database* db) override
-        {
-            auto ret = sqlite3_step(stmt);
-            switch (ret) {
-            case SQLITE_DONE:
-                return query::step::done;
-            case SQLITE_ROW:
-                return query::step::row;
-            default:
-                return query::step::error;
-            }
-        }
-        void** statement_ptr() override
-        {
-            return reinterpret_cast<void**>(&stmt);
-        }
-    };
-
-    struct sqlite3_database : public database {
-
-        inline const sqlite_error_category& sqlite_error_category_instance() const
-        {
-            static sqlite_error_category res;
-            return res;
-        }
-
-    public:
-        static std::unique_ptr<database> create(const std::string& path)
-        {
-            return std::make_unique<sqlite3_database>(path);
-        }
-        static std::string driver_name() { return "sqlite"; }
-
-    private:
-        static bool g_registered;
-
-    private:
-        std::string _filename;
-        sqlite3* db = nullptr;
-
-    public:
-        sqlite3_database(const std::string& filename)
-            : _filename(filename)
-        {
-        }
-        // database interface
-    public:
-        bool open() override
-        {
-            auto rc = sqlite3_open(_filename.c_str(), &db);
-            return rc == SQLITE_OK;
-        }
-        void close() override
-        {
-            sqlite3_close(db);
-            db = nullptr;
-        }
-        std::string last_error_description() const override
-        {
-            return sqlite3_errstr(last_error_code());
-        }
-
-        int last_error_code() const override
-        {
-            return sqlite3_errcode(db);
-        }
-        const std::error_category& error_category() const override
-        {
-            const static auto& category = sqlite_error_category_instance();
-            return category;
-        }
-        bool prepare(query* query) override
-        {
-            auto stmt_ptr = query->statement_ptr();
-            std::cout << query->statement() << std::endl;
-            auto stmt_ptr_ptr = reinterpret_cast<sqlite3_stmt**>(stmt_ptr);
-            auto prepareResult = sqlite3_prepare_v2(db, query->statement().c_str(), -1, stmt_ptr_ptr, nullptr);
-            if (prepareResult == SQLITE_OK) {
-                return true;
-            }
-            return false;
-        }
-
-        query::step exec(query* query) override
-        {
-            std::cout << query->statement() << std::endl;
-            auto ret = sqlite3_exec(db, query->statement().c_str(), nullptr, nullptr, nullptr);
-            if (ret) {
-                return query::step::error;
-            }
+    bool prepare(database* db) override
+    {
+        return db->prepare(this);
+    }
+    step next(database* db) override
+    {
+        auto ret = sqlite3_step(stmt);
+        switch (ret) {
+        case SQLITE_DONE:
             return query::step::done;
+        case SQLITE_ROW:
+            return query::step::row;
+        default:
+            return query::step::error;
         }
-        static const char* SQLITE_TABLE_NAMES_QUERY;
+    }
+    void** statement_ptr() override
+    {
+        return reinterpret_cast<void**>(&stmt);
+    }
+};
 
-        std::vector<table_info> get_table_info(const std::string& tableName) override
-        {
-            std::vector<table_info> res;
-            auto query = "PRAGMA table_info('" + tableName + "')";
-            auto rc = sqlite3_exec(db,
-                query.c_str(),
-                [](void* data, int argc, char** argv, char**) -> int {
-                    auto& res = *(std::vector<table_info>*)data;
-                    if (argc) {
-                        auto index = 0;
-                        auto cid = std::atoi(argv[index++]);
-                        std::string name = argv[index++];
-                        std::string type = argv[index++];
-                        bool notnull = !!std::atoi(argv[index++]);
-                        std::string dflt_value = argv[index] ? argv[index] : "";
-                        index++;
-                        auto pk = std::atoi(argv[index++]);
-                        res.push_back(table_info { cid, name, type, notnull, dflt_value, pk });
-                    }
-                    return 0;
-                },
-                &res, nullptr);
-            if (rc != SQLITE_OK) {
-                throw std::system_error(std::error_code(last_error_code(), error_category()));
-            }
-            return res;
-        }
+struct sqlite3_database : public database {
 
-        std::vector<std::string> table_names() override
-        {
-            std::vector<std::string> tableNames;
+    inline const sqlite_error_category& sqlite_error_category_instance() const
+    {
+        static sqlite_error_category res;
+        return res;
+    }
 
-            int res = sqlite3_exec(db, SQLITE_TABLE_NAMES_QUERY,
-                [](void* data, int argc, char** argv, char* * /*columnName*/) -> int {
-                    auto& tableNames = *(std::vector<std::string>*)data;
-                    for (int i = 0; i < argc; i++) {
-                        if (argv[i]) {
-                            tableNames.push_back(argv[i]);
-                        }
-                    }
-                    return 0;
-                },
-                &tableNames, nullptr);
+public:
+    static std::unique_ptr<database> create(const std::string& path)
+    {
+        return std::make_unique<sqlite3_database>(path);
+    }
+    static std::string driver_name() { return "sqlite"; }
 
-            if (res != SQLITE_OK) {
-                throw std::system_error(std::error_code(last_error_code(), error_category()));
-            }
-            return tableNames;
-        }
-        bool table_exists(const std::string& table_name) override
-        {
-            auto res = false;
-            std::stringstream ss;
-            ss << "SELECT COUNT(*) FROM sqlite_master WHERE type = '"
-               << "table"
-               << "' AND name = '" << table_name << "'";
-            auto query = ss.str();
-            auto rc = sqlite3_exec(db,
-                query.c_str(),
-                [](void* data, int argc, char** argv, char* * /*azColName*/) -> int {
-                    auto& res = *(bool*)data;
-                    if (argc) {
-                        res = !!std::atoi(argv[0]);
-                    }
-                    return 0;
-                },
-                &res, nullptr);
-            if (rc != SQLITE_OK) {
-                throw std::system_error(std::error_code(last_error_code(), error_category()));
-            }
-            return res;
-        }
+private:
+    static bool g_registered;
 
-        // database interface
-    public:
-        void begin_transaction() override
-        {
-            std::stringstream ss;
-            ss << "BEGIN TRANSACTION";
-            auto query = sqlite3_query(ss.str());
-            auto stmt_ptr = query.statement_ptr();
-            auto stmt_ptr_ptr = reinterpret_cast<sqlite3_stmt**>(stmt_ptr);
-            if (sqlite3_prepare_v2(db, query.statement().c_str(), -1, stmt_ptr_ptr, nullptr) == SQLITE_OK) {
-                auto ret = query.next(this);
-                if (ret == query::step::done) {
-                    //  done..
-                } else {
-                    throw std::system_error(std::error_code(last_error_code(), error_category()));
-                }
-            } else {
-                throw std::system_error(std::error_code(last_error_code(), error_category()));
-            }
-        }
-        void commit_transaction() override
-        {
-            std::stringstream ss;
-            ss << "COMMIT";
-            auto query = sqlite3_query(ss.str());
-            auto stmt_ptr = query.statement_ptr();
-            auto stmt_ptr_ptr = reinterpret_cast<sqlite3_stmt**>(stmt_ptr);
-            if (sqlite3_prepare_v2(db, query.statement().c_str(), -1, stmt_ptr_ptr, nullptr) == SQLITE_OK) {
-                auto ret = query.next(this);
-                if (ret == query::step::done) {
-                    //  done..
-                } else {
-                    throw std::system_error(std::error_code(last_error_code(), error_category()));
-                }
-            } else {
-                throw std::system_error(std::error_code(last_error_code(), error_category()));
-            }
-        }
-        void rollback_transaction() override
-        {
-            std::stringstream ss;
-            ss << "ROLLBACK";
-            auto query = sqlite3_query(ss.str());
-            auto stmt_ptr = query.statement_ptr();
-            auto stmt_ptr_ptr = reinterpret_cast<sqlite3_stmt**>(stmt_ptr);
-            if (sqlite3_prepare_v2(db, query.statement().c_str(), -1, stmt_ptr_ptr, nullptr) == SQLITE_OK) {
-                auto ret = query.next(this);
-                if (ret == query::step::done) {
-                    //  done..
-                } else {
-                    throw std::system_error(std::error_code(last_error_code(), error_category()));
-                }
-            } else {
-                throw std::system_error(std::error_code(last_error_code(), error_category()));
-            }
-        }
+private:
+    std::string _filename;
+    sqlite3* db = nullptr;
 
-        void rename_table(const std::string& old_name, const std::string& new_name) override
-        {
-            std::stringstream ss;
-            ss << "ALTER TABLE " << old_name << " RENAME TO " << new_name;
-            auto query = sqlite3_query(ss.str());
-            auto stmt_ptr = query.statement_ptr();
-            auto stmt_ptr_ptr = reinterpret_cast<sqlite3_stmt**>(stmt_ptr);
-            if (sqlite3_prepare_v2(db, query.statement().c_str(), -1, stmt_ptr_ptr, nullptr) == SQLITE_OK) {
-                auto ret = query.next(this);
-                if (ret == query::step::done) {
-                    //  done..
-                } else {
-                    throw std::system_error(std::error_code(last_error_code(), error_category()));
-                }
-            } else {
-                throw std::system_error(std::error_code(last_error_code(), error_category()));
-            }
-        }
+public:
+    sqlite3_database(const std::string& filename)
+        : _filename(filename)
+    {
+    }
+    // database interface
+public:
+    bool open() override
+    {
+        auto rc = sqlite3_open(_filename.c_str(), &db);
+        return rc == SQLITE_OK;
+    }
+    void close() override
+    {
+        sqlite3_close(db);
+        db = nullptr;
+    }
+    std::string last_error_description() const override
+    {
+        return sqlite3_errstr(last_error_code());
+    }
 
-        std::string current_timestamp() override
-        {
-            std::string res;
-            std::stringstream ss;
-            ss << "SELECT CURRENT_TIMESTAMP";
-            auto query = ss.str();
-            auto rc = sqlite3_exec(db,
-                query.c_str(),
-                [](void* data, int argc, char** argv, char**) -> int {
-                    auto& res = *(std::string*)data;
-                    if (argc) {
-                        if (argv[0]) {
-                            res = row_extractor<std::string>().extract(argv[0]);
-                        }
-                    }
-                    return 0;
-                },
-                &res, nullptr);
-            if (rc != SQLITE_OK) {
-                throw std::system_error(std::error_code(last_error_code(), error_category()));
-            }
-            return res;
-        }
-
-        bool threadsafe() override
-        {
+    int last_error_code() const override
+    {
+        return sqlite3_errcode(db);
+    }
+    const std::error_category& error_category() const override
+    {
+        const static auto& category = sqlite_error_category_instance();
+        return category;
+    }
+    bool prepare(query* query) override
+    {
+        auto stmt_ptr = query->statement_ptr();
+        std::cout << query->statement() << std::endl;
+        auto stmt_ptr_ptr = reinterpret_cast<sqlite3_stmt**>(stmt_ptr);
+        auto prepareResult = sqlite3_prepare_v2(db, query->statement().c_str(), -1, stmt_ptr_ptr, nullptr);
+        if (prepareResult == SQLITE_OK) {
             return true;
         }
+        return false;
+    }
 
-        // database interface
-    public:
-        void add_column(const std::string& tableName, const table_info& ti) override
-        {
-            std::stringstream ss;
-            ss << "ALTER TABLE " << tableName << " ADD COLUMN " << ti.name << " ";
-            ss << ti.type << " ";
-            if (ti.pk) {
-                ss << "PRIMARY KEY ";
-            }
-            if (ti.notnull) {
-                ss << "NOT NULL ";
-            }
-            if (ti.dflt_value.length()) {
-                ss << "DEFAULT " << ti.dflt_value << " ";
-            }
-            auto query = make_query(ss.str());
+    query::step exec(query* query) override
+    {
+        std::cout << query->statement() << std::endl;
+        auto ret = sqlite3_exec(db, query->statement().c_str(), nullptr, nullptr, nullptr);
+        if (ret) {
+            return query::step::error;
+        }
+        return query::step::done;
+    }
+    static const char* SQLITE_TABLE_NAMES_QUERY;
 
-            auto prepareResult = prepare(query.get());
-            if (prepareResult) {
-                if (query::step::done != exec(query.get())) {
-                    throw std::system_error(std::error_code(last_error_code(), error_category()));
+    std::vector<table_info> get_table_info(const std::string& tableName) override
+    {
+        std::vector<table_info> res;
+        auto query = "PRAGMA table_info('" + tableName + "')";
+        auto rc = sqlite3_exec(db,
+            query.c_str(),
+            [](void* data, int argc, char** argv, char**) -> int {
+                auto& res = *(std::vector<table_info>*)data;
+                if (argc) {
+                    auto index = 0;
+                    auto cid = std::atoi(argv[index++]);
+                    std::string name = argv[index++];
+                    std::string type = argv[index++];
+                    bool notnull = !!std::atoi(argv[index++]);
+                    std::string dflt_value = argv[index] ? argv[index] : "";
+                    index++;
+                    auto pk = std::atoi(argv[index++]);
+                    res.push_back(table_info { cid, name, type, notnull, dflt_value, pk });
                 }
+                return 0;
+            },
+            &res, nullptr);
+        if (rc != SQLITE_OK) {
+            throw std::system_error(std::error_code(last_error_code(), error_category()));
+        }
+        return res;
+    }
+
+    std::vector<std::string> table_names() override
+    {
+        std::vector<std::string> tableNames;
+
+        int res = sqlite3_exec(db, SQLITE_TABLE_NAMES_QUERY,
+            [](void* data, int argc, char** argv, char* * /*columnName*/) -> int {
+                auto& tableNames = *(std::vector<std::string>*)data;
+                for (int i = 0; i < argc; i++) {
+                    if (argv[i]) {
+                        tableNames.push_back(argv[i]);
+                    }
+                }
+                return 0;
+            },
+            &tableNames, nullptr);
+
+        if (res != SQLITE_OK) {
+            throw std::system_error(std::error_code(last_error_code(), error_category()));
+        }
+        return tableNames;
+    }
+    bool table_exists(const std::string& table_name) override
+    {
+        auto res = false;
+        std::stringstream ss;
+        ss << "SELECT COUNT(*) FROM sqlite_master WHERE type = '"
+           << "table"
+           << "' AND name = '" << table_name << "'";
+        auto query = ss.str();
+        auto rc = sqlite3_exec(db,
+            query.c_str(),
+            [](void* data, int argc, char** argv, char* * /*azColName*/) -> int {
+                auto& res = *(bool*)data;
+                if (argc) {
+                    res = !!std::atoi(argv[0]);
+                }
+                return 0;
+            },
+            &res, nullptr);
+        if (rc != SQLITE_OK) {
+            throw std::system_error(std::error_code(last_error_code(), error_category()));
+        }
+        return res;
+    }
+
+    // database interface
+public:
+    void begin_transaction() override
+    {
+        std::stringstream ss;
+        ss << "BEGIN TRANSACTION";
+        auto query = sqlite3_query(ss.str());
+        auto stmt_ptr = query.statement_ptr();
+        auto stmt_ptr_ptr = reinterpret_cast<sqlite3_stmt**>(stmt_ptr);
+        if (sqlite3_prepare_v2(db, query.statement().c_str(), -1, stmt_ptr_ptr, nullptr) == SQLITE_OK) {
+            auto ret = query.next(this);
+            if (ret == query::step::done) {
+                //  done..
             } else {
                 throw std::system_error(std::error_code(last_error_code(), error_category()));
             }
+        } else {
+            throw std::system_error(std::error_code(last_error_code(), error_category()));
         }
-        query_ptr make_query(const std::string& statement) override
-        {
-            return std::make_shared<sqlite3_query>(statement);
+    }
+    void commit_transaction() override
+    {
+        std::stringstream ss;
+        ss << "COMMIT";
+        auto query = sqlite3_query(ss.str());
+        auto stmt_ptr = query.statement_ptr();
+        auto stmt_ptr_ptr = reinterpret_cast<sqlite3_stmt**>(stmt_ptr);
+        if (sqlite3_prepare_v2(db, query.statement().c_str(), -1, stmt_ptr_ptr, nullptr) == SQLITE_OK) {
+            auto ret = query.next(this);
+            if (ret == query::step::done) {
+                //  done..
+            } else {
+                throw std::system_error(std::error_code(last_error_code(), error_category()));
+            }
+        } else {
+            throw std::system_error(std::error_code(last_error_code(), error_category()));
         }
+    }
+    void rollback_transaction() override
+    {
+        std::stringstream ss;
+        ss << "ROLLBACK";
+        auto query = sqlite3_query(ss.str());
+        auto stmt_ptr = query.statement_ptr();
+        auto stmt_ptr_ptr = reinterpret_cast<sqlite3_stmt**>(stmt_ptr);
+        if (sqlite3_prepare_v2(db, query.statement().c_str(), -1, stmt_ptr_ptr, nullptr) == SQLITE_OK) {
+            auto ret = query.next(this);
+            if (ret == query::step::done) {
+                //  done..
+            } else {
+                throw std::system_error(std::error_code(last_error_code(), error_category()));
+            }
+        } else {
+            throw std::system_error(std::error_code(last_error_code(), error_category()));
+        }
+    }
 
-        // database interface
-    public:
-        int limit_length() override { return sqlite3_limit(db, SQLITE_LIMIT_LENGTH, -1); }
-        void limit_set_length(int value) override { sqlite3_limit(db, SQLITE_LIMIT_LENGTH, value); }
-        int limit_sql_length() override { return sqlite3_limit(db, SQLITE_LIMIT_SQL_LENGTH, -1); }
-        void limit_set_sql_length(int value) override { sqlite3_limit(db, SQLITE_LIMIT_SQL_LENGTH, value); }
-        int limit_columns() override { return sqlite3_limit(db, SQLITE_LIMIT_COLUMN, -1); }
-        void limit_set_columns(int value) override { sqlite3_limit(db, SQLITE_LIMIT_COLUMN, value); }
-        int limit_expr_depth() override { return sqlite3_limit(db, SQLITE_LIMIT_EXPR_DEPTH, -1); }
-        void limit_set_expr_depth(int value) override { sqlite3_limit(db, SQLITE_LIMIT_EXPR_DEPTH, value); }
-        int limit_compound_select() override { return sqlite3_limit(db, SQLITE_LIMIT_COMPOUND_SELECT, -1); }
-        void limit_set_compound_select(int value) override { sqlite3_limit(db, SQLITE_LIMIT_COMPOUND_SELECT, value); }
-        int limit_vdbe_op() override { return sqlite3_limit(db, SQLITE_LIMIT_VDBE_OP, -1); }
-        void limit_set_vdbe_op(int value) override { sqlite3_limit(db, SQLITE_LIMIT_VDBE_OP, value); }
-        int limit_function_arg() override { return sqlite3_limit(db, SQLITE_LIMIT_FUNCTION_ARG, -1); }
-        void limit_set_function_arg(int value) override { sqlite3_limit(db, SQLITE_LIMIT_FUNCTION_ARG, value); }
-        int limit_attached() override { return sqlite3_limit(db, SQLITE_LIMIT_ATTACHED, -1); }
-        void limit_set_attached(int value) override { sqlite3_limit(db, SQLITE_LIMIT_ATTACHED, value); }
-        int limit_like_pattern_length() override { return sqlite3_limit(db, SQLITE_LIMIT_LIKE_PATTERN_LENGTH, -1); }
-        void limit_set_like_pattern_length(int value) override { sqlite3_limit(db, SQLITE_LIMIT_LIKE_PATTERN_LENGTH, value); }
-        int limit_variable_number() override { return sqlite3_limit(db, SQLITE_LIMIT_VARIABLE_NUMBER, -1); }
-        void limit_set_variable_number(int value) override { sqlite3_limit(db, SQLITE_LIMIT_VARIABLE_NUMBER, value); }
-        int limit_trigger_depth() override { return sqlite3_limit(db, SQLITE_LIMIT_TRIGGER_DEPTH, -1); }
-        void limit_set_trigger_depth(int value) override { sqlite3_limit(db, SQLITE_LIMIT_TRIGGER_DEPTH, value); }
-        int limit_worker_threads() override { return sqlite3_limit(db, SQLITE_LIMIT_WORKER_THREADS, -1); }
-        void limit_set_worker_threads(int value) override { sqlite3_limit(db, SQLITE_LIMIT_WORKER_THREADS, value); }
-        int last_changed_rows() override
-        {
-            return sqlite3_changes(db);
+    void rename_table(const std::string& old_name, const std::string& new_name) override
+    {
+        std::stringstream ss;
+        ss << "ALTER TABLE " << old_name << " RENAME TO " << new_name;
+        auto query = sqlite3_query(ss.str());
+        auto stmt_ptr = query.statement_ptr();
+        auto stmt_ptr_ptr = reinterpret_cast<sqlite3_stmt**>(stmt_ptr);
+        if (sqlite3_prepare_v2(db, query.statement().c_str(), -1, stmt_ptr_ptr, nullptr) == SQLITE_OK) {
+            auto ret = query.next(this);
+            if (ret == query::step::done) {
+                //  done..
+            } else {
+                throw std::system_error(std::error_code(last_error_code(), error_category()));
+            }
+        } else {
+            throw std::system_error(std::error_code(last_error_code(), error_category()));
         }
-        int total_changed_rows() override
-        {
-            return sqlite3_total_changes(db);
-        }
-        int64_t last_insert_rowid() override
-        {
-            return sqlite3_last_insert_rowid(db);
-        }
-        int busy_timeout(int ms) override
-        {
-            return sqlite3_busy_timeout(db, ms);
-        }
-        std::string version() override
-        {
-            return sqlite3_libversion();
-        }
-    };
+    }
 
-    const char* sqlite3_database::SQLITE_TABLE_NAMES_QUERY = "SELECT name FROM sqlite_master WHERE type='table'";
-    bool sqlite3_database::g_registered = db_driver_factory::register_driver(sqlite3_database::driver_name(),
-        sqlite3_database::create);
+    std::string current_timestamp() override
+    {
+        std::string res;
+        std::stringstream ss;
+        ss << "SELECT CURRENT_TIMESTAMP";
+        auto query = ss.str();
+        auto rc = sqlite3_exec(db,
+            query.c_str(),
+            [](void* data, int argc, char** argv, char**) -> int {
+                auto& res = *(std::string*)data;
+                if (argc) {
+                    if (argv[0]) {
+                        res = row_extractor<std::string>().extract(argv[0]);
+                    }
+                }
+                return 0;
+            },
+            &res, nullptr);
+        if (rc != SQLITE_OK) {
+            throw std::system_error(std::error_code(last_error_code(), error_category()));
+        }
+        return res;
+    }
+
+    bool threadsafe() override
+    {
+        return true;
+    }
+
+    // database interface
+public:
+    void add_column(const std::string& tableName, const table_info& ti) override
+    {
+        std::stringstream ss;
+        ss << "ALTER TABLE " << tableName << " ADD COLUMN " << ti.name << " ";
+        ss << ti.type << " ";
+        if (ti.pk) {
+            ss << "PRIMARY KEY ";
+        }
+        if (ti.notnull) {
+            ss << "NOT NULL ";
+        }
+        if (ti.dflt_value.length()) {
+            ss << "DEFAULT " << ti.dflt_value << " ";
+        }
+        auto query = make_query(ss.str());
+
+        auto prepareResult = prepare(query.get());
+        if (prepareResult) {
+            if (query::step::done != exec(query.get())) {
+                throw std::system_error(std::error_code(last_error_code(), error_category()));
+            }
+        } else {
+            throw std::system_error(std::error_code(last_error_code(), error_category()));
+        }
+    }
+    query_ptr make_query(const std::string& statement) override
+    {
+        return std::make_shared<sqlite3_query>(statement);
+    }
+
+    // database interface
+public:
+    int limit_length() override { return sqlite3_limit(db, SQLITE_LIMIT_LENGTH, -1); }
+    void limit_set_length(int value) override { sqlite3_limit(db, SQLITE_LIMIT_LENGTH, value); }
+    int limit_sql_length() override { return sqlite3_limit(db, SQLITE_LIMIT_SQL_LENGTH, -1); }
+    void limit_set_sql_length(int value) override { sqlite3_limit(db, SQLITE_LIMIT_SQL_LENGTH, value); }
+    int limit_columns() override { return sqlite3_limit(db, SQLITE_LIMIT_COLUMN, -1); }
+    void limit_set_columns(int value) override { sqlite3_limit(db, SQLITE_LIMIT_COLUMN, value); }
+    int limit_expr_depth() override { return sqlite3_limit(db, SQLITE_LIMIT_EXPR_DEPTH, -1); }
+    void limit_set_expr_depth(int value) override { sqlite3_limit(db, SQLITE_LIMIT_EXPR_DEPTH, value); }
+    int limit_compound_select() override { return sqlite3_limit(db, SQLITE_LIMIT_COMPOUND_SELECT, -1); }
+    void limit_set_compound_select(int value) override { sqlite3_limit(db, SQLITE_LIMIT_COMPOUND_SELECT, value); }
+    int limit_vdbe_op() override { return sqlite3_limit(db, SQLITE_LIMIT_VDBE_OP, -1); }
+    void limit_set_vdbe_op(int value) override { sqlite3_limit(db, SQLITE_LIMIT_VDBE_OP, value); }
+    int limit_function_arg() override { return sqlite3_limit(db, SQLITE_LIMIT_FUNCTION_ARG, -1); }
+    void limit_set_function_arg(int value) override { sqlite3_limit(db, SQLITE_LIMIT_FUNCTION_ARG, value); }
+    int limit_attached() override { return sqlite3_limit(db, SQLITE_LIMIT_ATTACHED, -1); }
+    void limit_set_attached(int value) override { sqlite3_limit(db, SQLITE_LIMIT_ATTACHED, value); }
+    int limit_like_pattern_length() override { return sqlite3_limit(db, SQLITE_LIMIT_LIKE_PATTERN_LENGTH, -1); }
+    void limit_set_like_pattern_length(int value) override { sqlite3_limit(db, SQLITE_LIMIT_LIKE_PATTERN_LENGTH, value); }
+    int limit_variable_number() override { return sqlite3_limit(db, SQLITE_LIMIT_VARIABLE_NUMBER, -1); }
+    void limit_set_variable_number(int value) override { sqlite3_limit(db, SQLITE_LIMIT_VARIABLE_NUMBER, value); }
+    int limit_trigger_depth() override { return sqlite3_limit(db, SQLITE_LIMIT_TRIGGER_DEPTH, -1); }
+    void limit_set_trigger_depth(int value) override { sqlite3_limit(db, SQLITE_LIMIT_TRIGGER_DEPTH, value); }
+    int limit_worker_threads() override { return sqlite3_limit(db, SQLITE_LIMIT_WORKER_THREADS, -1); }
+    void limit_set_worker_threads(int value) override { sqlite3_limit(db, SQLITE_LIMIT_WORKER_THREADS, value); }
+    int last_changed_rows() override
+    {
+        return sqlite3_changes(db);
+    }
+    int total_changed_rows() override
+    {
+        return sqlite3_total_changes(db);
+    }
+    int64_t last_insert_rowid() override
+    {
+        return sqlite3_last_insert_rowid(db);
+    }
+    int busy_timeout(int ms) override
+    {
+        return sqlite3_busy_timeout(db, ms);
+    }
+    std::string version() override
+    {
+        return sqlite3_libversion();
+    }
+
+    static int collate_callback(void* arg, int leftLen, const void* lhs, int rightLen, const void* rhs)
+    {
+        auto& f = *(collating_function*)arg;
+        return f(leftLen, lhs, rightLen, rhs);
+    }
+
+    void add_collation(std::string name, collating_function* function_ptr) override
+    {
+        if (sqlite3_create_collation(db,
+                name.c_str(),
+                SQLITE_UTF8,
+                function_ptr,
+                function_ptr ? collate_callback : nullptr)
+            != SQLITE_OK) {
+            throw std::system_error(std::error_code(last_error_code(), error_category()));
+        }
+    }
+};
+
+const char* sqlite3_database::SQLITE_TABLE_NAMES_QUERY = "SELECT name FROM sqlite_master WHERE type='table'";
+bool sqlite3_database::g_registered = db_driver_factory::register_driver(sqlite3_database::driver_name(),
+    sqlite3_database::create);
 }
